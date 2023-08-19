@@ -38,10 +38,11 @@ void numerical_dynamics (void)
             (5 * 4 * LANDER_SIZE * LANDER_SIZE) * velocity.abs2() *
             velocity.norm();
     }
-    double lander_mass = UNLOADED_LANDER_MASS +
-        FUEL_DENSITY * FUEL_CAPACITY * fuel;
+    double lander_mass = UNLOADED_LANDER_MASS + FUEL_DENSITY * FUEL_CAPACITY * fuel;
     vector3d gravity = -GRAVITY * MARS_MASS * lander_mass *
         position.norm() / position.abs2();
+
+    vector3d net_force = drag + gravity + thr;
 
     
 
