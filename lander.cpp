@@ -24,7 +24,10 @@ void numerical_dynamics (void)
   // This is the function that performs the numerical integration to update the
   // lander's pose. The time step is delta_t (global variable).
 {
-  // INSERT YOUR CODE HERE
+    // INSERT YOUR CODE HERE
+    //variable to choose which integrator is being used
+    const bool EULER_INTEGRATOR_CHOSEN = false; 
+    static vector3d previous_position;
     vector3d thr = thrust_wrt_world();
     double density = atmospheric_density(position);
     vector3d drag = -0.5 * density * DRAG_COEF_LANDER *
@@ -43,6 +46,27 @@ void numerical_dynamics (void)
         position.norm() / position.abs2();
 
     vector3d net_force = drag + gravity + thr;
+
+    if (EULER_INTEGRATOR_CHOSEN or simulation_time == 0)
+    {
+        //Euler integration
+        previous_position = position;
+        position += delta_t * velocity;
+        velocity += delta_t * net_force / lander_mass;
+    }
+    else
+    {
+        //Verlet integration
+        //When a new simulation is chosen, the time returns to 0
+        //Verlet will not have a legit previous position, so 
+        //Euler should be used, hence the condition
+        vector3d new_position = 2 * position - previous_position +
+            pow(delta_t, 2) * net_force / lander_mass;
+        //velocity updated in sync with position for completeness
+        velocity = 1 / delta_t * (new_position - position);
+        previous_position = position;
+        position = new_position;
+    }
 
     
 
