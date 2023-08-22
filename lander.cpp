@@ -19,11 +19,13 @@ void autopilot (void)
 {
   // INSERT YOUR CODE HERE
     //Trial constant values; adjust depending on results.
-    const double K_h = 1;
+    //height constant
+    const double K_h = 0.018; 
     //controller gain
-    const double K_p = 1;
+    const double K_p = 0.34;
     //offset; guessing this should be roughly the throttle needed to balance lander weight
-    const double DELTA = 0.1;
+    //however, don't wanna overdo it, so using less than weight at furthest distance
+    const double DELTA = 0.08;
     //altitude
     double h = position.abs() - MARS_RADIUS;
     //error term, position.norm( ) is e_r
@@ -31,6 +33,8 @@ void autopilot (void)
     double P_out = K_p * e;
     //set throttle accordingly
 
+    //Working values: 0.018, 0.335, 0.08 (borderline for 200k)
+    //0.34 is pretty much perfect
     if (P_out <= -DELTA)
     {
         throttle = 0;
@@ -142,7 +146,7 @@ void initialize_simulation (void)
     delta_t = 0.1;
     parachute_status = NOT_DEPLOYED;
     stabilized_attitude = true;
-    autopilot_enabled = false;
+    autopilot_enabled = true; //changed
     break;
 
   case 2:
@@ -186,7 +190,7 @@ void initialize_simulation (void)
     delta_t = 0.1;
     parachute_status = NOT_DEPLOYED;
     stabilized_attitude = true;
-    autopilot_enabled = false;
+    autopilot_enabled = true; //changed
     break;
 
   case 6:
