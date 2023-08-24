@@ -31,10 +31,11 @@ void autopilot (void)
     //error term, position.norm( ) is e_r
     double e = -(0.5 + K_h * h + velocity * position.norm()); 
     double P_out = K_p * e;
-    //set throttle accordingly
-
     //Working values: 0.018, 0.335, 0.08 (borderline for 200k)
     //0.34 is pretty much perfect
+    //for fuel of 100l
+
+    //set throttle accordingly
     if (P_out <= -DELTA)
     {
         throttle = 0;
@@ -44,6 +45,23 @@ void autopilot (void)
         throttle = DELTA + P_out;
     }
     else throttle = 1;
+
+    //final part of task; values to file
+    const bool write_to_file = true;
+    if (write_to_file)
+    {
+        static ofstream fout;
+        if (not fout.is_open())
+            fout.open("descent_rates.txt");
+
+        double target = 0.5 + K_h * h;
+        double actual = -1 * velocity * position.norm();
+        fout << h << ' ' << target << ' ' << actual << "\n";
+
+        if (h == 0)
+            fout.close();
+    }
+
 }
 
 void numerical_dynamics (void)
