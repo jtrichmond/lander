@@ -18,22 +18,18 @@ void autopilot (void)
   // Autopilot to adjust the engine throttle, parachute and attitude control
 {
   // INSERT YOUR CODE HERE
-    //Trial constant values; adjust depending on results.
-    //height constant
-    const double K_h = 0.018; 
-    //controller gain
+    //Trial constant values; adjust depending on results for 100l
+    //height constant, works at 0.018
+    const double K_h = 0.04; 
+    //controller gain, 0.34, 0.335 borderline
     const double K_p = 0.34;
-    //offset; guessing this should be roughly the throttle needed to balance lander weight
-    //however, don't wanna overdo it, so using less than weight at furthest distance
+    //offset, 0.08
     const double DELTA = 0.08;
     //altitude
     double h = position.abs() - MARS_RADIUS;
     //error term, position.norm( ) is e_r
     double e = -(0.5 + K_h * h + velocity * position.norm()); 
     double P_out = K_p * e;
-    //Working values: 0.018, 0.335, 0.08 (borderline for 200k)
-    //0.34 is pretty much perfect
-    //for fuel of 100l
 
     //set throttle accordingly
     if (P_out <= -DELTA)
