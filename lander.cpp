@@ -17,47 +17,62 @@
 void autopilot (void)
   // Autopilot to adjust the engine throttle, parachute and attitude control
 {
-  // INSERT YOUR CODE HERE
-    //Trial constant values; adjust depending on results for 100l
-    //height constant, works at 0.018
-    const double K_h = 0.04; 
-    //controller gain, 0.34, 0.335 borderline
-    const double K_p = 0.34;
-    //offset, 0.08
-    const double DELTA = 0.08;
-    //altitude
-    double h = position.abs() - MARS_RADIUS;
-    //error term, position.norm( ) is e_r
-    double e = -(0.5 + K_h * h + velocity * position.norm()); 
-    double P_out = K_p * e;
+    const bool landing = false; // bool value to determine whether landing or hovering
+    //hovering is for info examples 1
+    //NB: if using hovering, FUEL_RATE_AT_MAX_THRUST will be 0 not 0.5
 
-    //set throttle accordingly
-    if (P_out <= -DELTA)
+    if (landing)
     {
-        throttle = 0;
+        //Trial constant values; adjust depending on results for 100l
+        //height constant, works at 0.018, optimised to 0.04
+        const double K_h = 0.04;
+        //controller gain, 0.34, 0.335 borderline
+        const double K_p = 0.34;
+        //offset, 0.08
+        const double DELTA = 0.08;
+        //altitude
+        double h = position.abs() - MARS_RADIUS;
+        //error term, position.norm( ) is e_r
+        double e = -(0.5 + K_h * h + velocity * position.norm());
+        double P_out = K_p * e;
+
+        //set throttle accordingly
+        if (P_out <= -DELTA)
+        {
+            throttle = 0;
+        }
+        else if (-DELTA < P_out < 1 - DELTA)
+        {
+            throttle = DELTA + P_out;
+        }
+        else throttle = 1;
+
+        //final part of task; values to file
+        const bool write_to_file = true;
+        if (write_to_file)
+        {
+            static ofstream fout;
+            if (not fout.is_open())
+                fout.open("descent_rates.txt");
+
+            double target = 0.5 + K_h * h;
+            double actual = -1 * velocity * position.norm();
+            fout << h << ' ' << target << ' ' << actual << "\n";
+
+            if (h == 0)
+                fout.close();
+        }
     }
-    else if (-DELTA < P_out < 1 - DELTA)
+    else
     {
-        throttle = DELTA + P_out;
+        //hovering
+        double lander_mass = UNLOADED_LANDER_MASS + FUEL_DENSITY * FUEL_CAPACITY * fuel;
+        double F_eq = GRAVITY * MARS_MASS * lander_mass / pow(MARS_RADIUS + target_altitude, 2);
+        throttle = F_eq / MAX_THRUST;
+        //hovering control system not implemented
+
     }
-    else throttle = 1;
-
-    //final part of task; values to file
-    const bool write_to_file = true;
-    if (write_to_file)
-    {
-        static ofstream fout;
-        if (not fout.is_open())
-            fout.open("descent_rates.txt");
-
-        double target = 0.5 + K_h * h;
-        double actual = -1 * velocity * position.norm();
-        fout << h << ' ' << target << ' ' << actual << "\n";
-
-        if (h == 0)
-            fout.close();
-    }
-
+    
 }
 
 void numerical_dynamics (void)
@@ -134,9 +149,9 @@ void initialize_simulation (void)
   scenario_description[3] = "polar launch at escape velocity (but drag prevents escape)";
   scenario_description[4] = "elliptical orbit that clips the atmosphere and decays";
   scenario_description[5] = "descent from 200km";
-  scenario_description[6] = "";
-  scenario_description[7] = "";
-  scenario_description[8] = "";
+  scenario_description[6] = "altitude control test at 500m";
+  scenario_description[7] = "altitude control test at 510m";
+  scenario_description[8] = "altitude control test at 700m";
   scenario_description[9] = "";
 
   switch (scenario) {
@@ -160,7 +175,7 @@ void initialize_simulation (void)
     delta_t = 0.1;
     parachute_status = NOT_DEPLOYED;
     stabilized_attitude = true;
-    autopilot_enabled = true; //changed
+    autopilot_enabled = true; //changed from false
     break;
 
   case 2:
@@ -204,16 +219,44 @@ void initialize_simulation (void)
     delta_t = 0.1;
     parachute_status = NOT_DEPLOYED;
     stabilized_attitude = true;
-    autopilot_enabled = true; //changed
+    autopilot_enabled = true; //changed from false
     break;
 
+    //6 to 8 for info examples 1 q3
   case 6:
+    // 500m altitude control test at 500m altitude
+    position = vector3d(0.0, -(MARS_RADIUS + 500), 0.0);
+    velocity = vector3d(0.0, 0.0, 0.0);
+    orientation = vector3d(0.0, 0.0, 90.0);
+    delta_t = 0.01;
+    parachute_status = NOT_DEPLOYED;
+    stabilized_attitude = true;
+    autopilot_enabled = true; 
+    target_altitude = 500;
     break;
 
   case 7:
+    // 500m altitude control test at 510m altitude
+    position = vector3d(0.0, -(MARS_RADIUS + 510), 0.0);
+    velocity = vector3d(0.0, 0.0, 0.0);
+    orientation = vector3d(0.0, 0.0, 90.0);
+    delta_t = 0.01;
+    parachute_status = NOT_DEPLOYED;
+    stabilized_attitude = true;
+    autopilot_enabled = true;
+    target_altitude = 500;
     break;
 
   case 8:
+    // 500m altitude control test at 700m altitude
+    position = vector3d(0.0, -(MARS_RADIUS + 700), 0.0);
+    velocity = vector3d(0.0, 0.0, 0.0);
+    orientation = vector3d(0.0, 0.0, 90.0);
+    delta_t = 0.01;
+    parachute_status = NOT_DEPLOYED;
+    stabilized_attitude = true;
+    autopilot_enabled = true;
+    target_altitude = 500;
     break;
 
   case 9:
