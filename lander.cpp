@@ -13,15 +13,27 @@
 // ahg@eng.cam.ac.uk and gc121@eng.cam.ac.uk.
 
 #include "lander.h"
+enum AutoPilotPurpose
+{
+    Landing,
+    Examples1, //constant thrust hover
+    Examples2 //variable thrust hover
+};
 
 void autopilot (void)
   // Autopilot to adjust the engine throttle, parachute and attitude control
 {
-    const bool landing = false; // bool value to determine whether landing or hovering
+    const AutoPilotPurpose purpose = AutoPilotPurpose::Examples2;
     //hovering is for info examples 1
-    //NB: if using hovering, FUEL_RATE_AT_MAX_THRUST will be 0 not 0.5
+    //NB: if not using landing, FUEL_RATE_AT_MAX_THRUST will be 0 not 0.5
 
-    if (landing)
+    double lander_mass = UNLOADED_LANDER_MASS + FUEL_DENSITY * FUEL_CAPACITY * fuel;
+    //only used in Examples 
+    double F_eq = GRAVITY * MARS_MASS * lander_mass / pow(MARS_RADIUS + target_altitude, 2);
+
+    //altitude
+    double h = position.abs() - MARS_RADIUS;
+    if (purpose == Landing)
     {
         //Trial constant values; adjust depending on results for 100l
         //height constant, works at 0.018, optimised to 0.04
@@ -30,8 +42,7 @@ void autopilot (void)
         const double K_p = 0.34;
         //offset, 0.08
         const double DELTA = 0.08;
-        //altitude
-        double h = position.abs() - MARS_RADIUS;
+        
         //error term, position.norm( ) is e_r
         double e = -(0.5 + K_h * h + velocity * position.norm());
         double P_out = K_p * e;
@@ -63,14 +74,42 @@ void autopilot (void)
                 fout.close();
         }
     }
-    else
+    else if (purpose == Examples1)
     {
         //hovering
-        double lander_mass = UNLOADED_LANDER_MASS + FUEL_DENSITY * FUEL_CAPACITY * fuel;
-        double F_eq = GRAVITY * MARS_MASS * lander_mass / pow(MARS_RADIUS + target_altitude, 2);
         throttle = F_eq / MAX_THRUST;
         //hovering control system not implemented
+    }
+    else if (purpose == Examples2)
+    {
+        const float K_p = 0.01, K_d = 0.01;
+        const bool part1 = false;
+        float error = target_altitude - h;
+        static float last_error;
+        if (simulation_time == 0)
+            last_error = error;
+        float throttle_aim;
+        if (part1)
+        {
+            //K(s) = Kp therefore
+            throttle_aim = K_p * error + F_eq / MAX_THRUST;
+            
+        }
+        else
+        {
+            //K(s) = Kp + Kd.s
+            //Use one-sided estimation for de/dt
+            float edot = (error - last_error) / delta_t;
+            throttle_aim = K_d * edot + K_p * error + F_eq / MAX_THRUST;
+        }
+        if (throttle_aim > 1)
+            throttle = 1;
+        else if (throttle_aim < 0)
+            throttle = 0;
+        else
+            throttle = throttle_aim;
 
+        last_error = error;
     }
     
 }
@@ -153,6 +192,9 @@ void initialize_simulation (void)
   scenario_description[7] = "altitude control test at 510m";
   scenario_description[8] = "altitude control test at 700m";
   scenario_description[9] = "";
+
+  //default value, will be reassigned for scenarios that need it
+  target_altitude = 0;
 
   switch (scenario) {
 
