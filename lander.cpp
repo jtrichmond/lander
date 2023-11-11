@@ -13,17 +13,11 @@
 // ahg@eng.cam.ac.uk and gc121@eng.cam.ac.uk.
 
 #include "lander.h"
-enum AutoPilotPurpose
-{
-    Landing,
-    Examples1, //constant thrust hover
-    Examples2 //variable thrust hover
-};
 
 void autopilot (void)
   // Autopilot to adjust the engine throttle, parachute and attitude control
 {
-    const AutoPilotPurpose purpose = AutoPilotPurpose::Examples2;
+    //autopilot purpose set in lander.h
     //hovering is for info examples 1
     //NB: if not using landing, FUEL_RATE_AT_MAX_THRUST will be 0 not 0.5
 
@@ -33,7 +27,7 @@ void autopilot (void)
 
     //altitude
     double h = position.abs() - MARS_RADIUS;
-    if (purpose == Landing)
+    if (auto_purpose == Landing)
     {
         //Trial constant values; adjust depending on results for 100l
         //height constant, works at 0.018, optimised to 0.04
@@ -74,16 +68,17 @@ void autopilot (void)
                 fout.close();
         }
     }
-    else if (purpose == Examples1)
+    else if (auto_purpose == Examples1)
     {
         //hovering
         throttle = F_eq / MAX_THRUST;
         //hovering control system not implemented
     }
-    else if (purpose == Examples2)
+    else if (auto_purpose == Examples2 || auto_purpose == Examples3)
     {
-        const float K_p = 0.01, K_d = 0.01;
-        const bool part1 = false;
+        const float K_p = 0.091, K_d = 0.178;
+        const bool part1 = false; //part 1 ex 2
+        const bool no_feedback = true; //ex3 q5 ptd
         float error = target_altitude - h;
         static float last_error;
         if (simulation_time == 0)
@@ -93,12 +88,15 @@ void autopilot (void)
         {
             //K(s) = Kp therefore
             throttle_aim = K_p * error + F_eq / MAX_THRUST;
-            
+
         }
+        else if (no_feedback)
+            throttle_aim = F_eq / MAX_THRUST;
         else
         {
             //K(s) = Kp + Kd.s
             //Use one-sided estimation for de/dt
+            //NB: could have used velocity y component rather than de/dt for this, as the required height is constant
             float edot = (error - last_error) / delta_t;
             throttle_aim = K_d * edot + K_p * error + F_eq / MAX_THRUST;
         }
@@ -111,7 +109,6 @@ void autopilot (void)
 
         last_error = error;
     }
-    
 }
 
 void numerical_dynamics (void)
@@ -138,6 +135,9 @@ void numerical_dynamics (void)
     double lander_mass = UNLOADED_LANDER_MASS + FUEL_DENSITY * FUEL_CAPACITY * fuel;
     vector3d gravity = -GRAVITY * MARS_MASS * lander_mass *
         position.norm() / position.abs2();
+
+    if (auto_purpose == Examples3)
+        thr += 100 * cos(0.1 * simulation_time) * position.norm(); //disturbance for examples 3
 
     vector3d net_force = drag + gravity + thr;
 

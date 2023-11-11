@@ -85,6 +85,13 @@
 
 using namespace std;
 
+enum AutoPilotPurpose //for determining autopilot purpose for scenarios
+{
+    Landing,
+    Examples1, //constant thrust hover
+    Examples2, //variable thrust hover
+    Examples3 //variable thrust hover
+};
 class vector3d {
   // Utility class for three-dimensional vector operations
 public:
@@ -189,6 +196,7 @@ GLfloat straight_on[] = { 0.0, 0.0, 1.0, 0.0 };
 extern bool stabilized_attitude, autopilot_enabled;
 extern double delta_t, simulation_time, throttle, fuel;
 extern double target_altitude; //for hover
+const extern AutoPilotPurpose auto_purpose = Examples3; //for hover
 extern unsigned short scenario;
 extern string scenario_description[];
 extern vector3d position, orientation, velocity;
