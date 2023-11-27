@@ -74,7 +74,7 @@
 // MAX_THRUST, as defined below, is 1.5 * weight of fully loaded lander at surface
 #define MAX_THRUST (1.5 * (FUEL_DENSITY*FUEL_CAPACITY+UNLOADED_LANDER_MASS) * (GRAVITY*MARS_MASS/(MARS_RADIUS*MARS_RADIUS))) // (N)
 #define ENGINE_LAG 0.0 // (s)
-#define ENGINE_DELAY 0.0 // (s)
+#define ENGINE_DELAY 0.9*1.029 // (s) 0 for default
 #define DRAG_COEF_CHUTE 2.0
 #define DRAG_COEF_LANDER 1.0
 #define MAX_PARACHUTE_DRAG 20000.0 // (N)
@@ -90,7 +90,8 @@ enum AutoPilotPurpose //for determining autopilot purpose for scenarios
     Landing,
     Examples1, //constant thrust hover
     Examples2, //variable thrust hover
-    Examples3 //variable thrust hover
+    Examples3, //variable thrust hover
+    Examples4 //delay and lag
 };
 class vector3d {
   // Utility class for three-dimensional vector operations
@@ -196,7 +197,7 @@ GLfloat straight_on[] = { 0.0, 0.0, 1.0, 0.0 };
 extern bool stabilized_attitude, autopilot_enabled;
 extern double delta_t, simulation_time, throttle, fuel;
 extern double target_altitude; //for hover
-const extern AutoPilotPurpose auto_purpose = Examples3; //for hover
+const extern AutoPilotPurpose auto_purpose = Examples4; //for examples
 extern unsigned short scenario;
 extern string scenario_description[];
 extern vector3d position, orientation, velocity;

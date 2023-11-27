@@ -80,35 +80,54 @@ void autopilot (void)
         const bool part1 = false; //part 1 ex 2
         const bool no_feedback = true; //ex3 q5 ptd
         float error = target_altitude - h;
-        static float last_error;
-        if (simulation_time == 0)
-            last_error = error;
         float throttle_aim;
-        if (part1)
+        if (part1 or no_feedback)
         {
-            //K(s) = Kp therefore
-            throttle_aim = K_p * error + F_eq / MAX_THRUST;
+            if (part1)
+            {
+                //K(s) = Kp therefore
+                throttle_aim = K_p * error + F_eq / MAX_THRUST;
 
+            }
+            else if (no_feedback)
+                throttle_aim = F_eq / MAX_THRUST;
+            if (throttle_aim > 1)
+                throttle = 1;
+            else if (throttle_aim < 0)
+                throttle = 0;
+            else
+                throttle = throttle_aim;
         }
-        else if (no_feedback)
-            throttle_aim = F_eq / MAX_THRUST;
         else
         {
-            //K(s) = Kp + Kd.s
-            //Use one-sided estimation for de/dt
-            //NB: could have used velocity y component rather than de/dt for this, as the required height is constant
-            float edot = (error - last_error) / delta_t;
-            throttle_aim = K_d * edot + K_p * error + F_eq / MAX_THRUST;
+            PDController(K_p, K_d, error, F_eq);
         }
-        if (throttle_aim > 1)
-            throttle = 1;
-        else if (throttle_aim < 0)
-            throttle = 0;
-        else
-            throttle = throttle_aim;
-
-        last_error = error;
     }
+    else if (auto_purpose == Examples4)
+        //delay or lag implemented
+    {
+        const float K_p = 0.091, K_d = 2*K_p;
+        float error = target_altitude - h;
+        PDController(K_p, K_d, error, F_eq);
+    }
+}
+//sets throttle value based on PD controller with values given
+void PDController(float K_p, float K_d, float error, float F_eq)
+{
+    static float last_error;
+    if (simulation_time == 0)
+            last_error = error;
+    float edot = (error - last_error) / delta_t;
+    float throttle_aim = K_d * edot + K_p * error + F_eq / MAX_THRUST;
+    if (throttle_aim > 1)
+        throttle = 1;
+    else if (throttle_aim < 0)
+        throttle = 0;
+    else
+        throttle = throttle_aim;
+
+    last_error = error;
+
 }
 
 void numerical_dynamics (void)
@@ -138,6 +157,7 @@ void numerical_dynamics (void)
 
     if (auto_purpose == Examples3)
         thr += 100 * cos(0.1 * simulation_time) * position.norm(); //disturbance for examples 3
+        //assumes thrust aligned with radial axis.
 
     vector3d net_force = drag + gravity + thr;
 
